@@ -71,12 +71,13 @@ final public class HSHealthStore: Loggable {
     ///
     /// The value will be `.notSet` if the user not allowed the
     /// app to access this data
-     ///
+    ///
     public var birthday: Date? {
         guard let components  = try? healthStore.dateOfBirthComponents() else {
             return nil
         }
-//        Date(
+        
+        return Calendar.current.date(from: components)
     }
     
     
