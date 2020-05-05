@@ -19,7 +19,23 @@ public enum HSHealthStoreErrors: Error {
 /// Authorization callback
 public typealias HealthKitAuthorizationCallback = ((_ success: Bool, _ error: HSHealthStoreErrors?)->())
 
-
+/// Authorization status of a given type
+public enum AuthorizationRequestStatus: Int {
+    case willPresentRequestSheet
+    case wontPresentRequestSheet
+    case unknown
+    
+    internal init(status: HKAuthorizationRequestStatus) {
+        switch status {
+        case .shouldRequest:
+            self = .willPresentRequestSheet
+        case .unnecessary:
+            self = .wontPresentRequestSheet
+        case .unknown:
+            self = .unknown
+        }
+    }
+}
 
 
 /// Main Health data supplier
@@ -60,8 +76,6 @@ final public class HSHealthStore: Loggable {
         healthStore
     }
     
-    public var isAuthorized = false
-    
     // MARK: Characteristic information
     
     /// Bilogical sex of the user
@@ -85,6 +99,12 @@ final public class HSHealthStore: Loggable {
         }
         
         return Calendar.current.date(from: components)
+    }
+    
+    /// Determines whether to Health app authorization request had proceeded
+    /// completely once throughout the lifetime of the app
+    public var authorizationRequestedOnce: Bool {
+        UserDefaults.standard.bool(forKey: "healthAuthorizationRequested")
     }
     
     
@@ -136,7 +156,13 @@ final public class HSHealthStore: Loggable {
         
         healthStore.requestAuthorization(toShare: typesToWrite,
                                          read: typesToRead) { (success, error) in
-                                            self.isAuthorized = (error == nil)
+                                            
+                                            /// set the flag that the authorization
+                                            /// request proceeded throughout successfully once
+                                            if success {
+                                                UserDefaults.standard.set(true, forKey: "healthAuthorizationRequested")
+                                            }
+                                            
                                             if let _error = error {
                                                 callback?(false, .apiError(_error))
                                                 
@@ -157,12 +183,35 @@ final public class HSHealthStore: Loggable {
         let store = healthStore
         let workoutConfig = HKWorkoutConfiguration()
         workoutConfig.activityType = .pilates
+        workoutConfig.locationType = .indoor
         
         let builder = HKWorkoutBuilder(healthStore: store,
                                        configuration: workoutConfig,
                                        device: .local())
         
         return (store, builder)
+    }
+    
+    /// Queries if the user has already been presented with a permission sheet by the OS
+    ///
+    /// The result can be used to take the necessary action when the user wants to start using
+    /// the Helath app intergation. In case they denied the request before, they will not be presented
+    /// the sheet. Which means then they need addtional guidance to open the Health app externally to allow the integration
+    ///
+    /// - Parameters:
+    ///   - share: Types to determine the write access for
+    ///   - read: Types to determine the read access for
+    ///   - callback: Callback for results
+    public func requestStatus(toShare share: [HKSampleType], toRead read: [HKObjectType], _ callback: @escaping ((_ status: AuthorizationRequestStatus)->()))  {
+        healthStore.getRequestStatusForAuthorization(toShare: Set(share),
+                                                     read: Set(read)) { (status, error) in
+                                                        guard error == nil else {
+                                                            callback(.unknown)
+                                                            return
+                                                        }
+                                                        /// notify the callback
+                                                        callback(.init(status: status))
+        }
     }
 }
 
