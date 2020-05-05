@@ -163,12 +163,20 @@ final public class HSHealthStore: Loggable {
                                                 UserDefaults.standard.set(true, forKey: "healthAuthorizationRequested")
                                             }
                                             
+                                            var permission = false
+                                            
+                                            typesToWrite.forEach({
+                                                if self.isObjectAuthorized($0) {
+                                                    permission = true
+                                                }
+                                            })
+                                            
                                             if let _error = error {
                                                 callback?(false, .apiError(_error))
                                                 
                                                 self.log(self.getLog("Authorization failed with error: \(_error) - \(_error.localizedDescription)"), type: .error)
                                             } else {
-                                                callback?(true, nil)
+                                                callback?(permission, nil)
                                                 self.log(self.getLog("Authorization successful"))
                                             }
         }
@@ -212,6 +220,22 @@ final public class HSHealthStore: Loggable {
                                                         /// notify the callback
                                                         callback(.init(status: status))
         }
+    }
+    
+    
+    /// Checks whether the user has authorized the given type for accessing
+    /// - Parameter object: Object to check
+    /// - Returns: True if authorized, false if otherwise
+    public func isObjectAuthorized(_ object: HKObjectType) -> Bool {
+        healthStore.authorizationStatus(for: object) == .sharingAuthorized
+    }
+    
+    
+    /// Checks if the user has responded to an object
+    /// - Parameter object: Object to check
+    /// - Returns: True if the user has responded false if otherwise
+    public func userResponded(toObject object: HKObjectType) -> Bool {
+        healthStore.authorizationStatus(for: object) != .notDetermined
     }
 }
 
