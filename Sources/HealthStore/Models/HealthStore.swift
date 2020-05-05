@@ -46,7 +46,7 @@ final public class HSHealthStore: Loggable {
     
     
     // MARK: - Public properties
-    
+
     /// Flag regarding whether the health data is available on the current device
     public static var isHealthKitAvailable: Bool {
         HKHealthStore.isHealthDataAvailable()
@@ -54,6 +54,13 @@ final public class HSHealthStore: Loggable {
     
     /// Shared storage
     public static let shared = HSHealthStore()
+    
+    /// Get access to the underlying `HealthStore`
+    public var store: HKHealthStore {
+        healthStore
+    }
+    
+    public var isAuthorized = false
     
     // MARK: Characteristic information
     
@@ -129,8 +136,10 @@ final public class HSHealthStore: Loggable {
         
         healthStore.requestAuthorization(toShare: typesToWrite,
                                          read: typesToRead) { (success, error) in
+                                            self.isAuthorized = (error == nil)
                                             if let _error = error {
                                                 callback?(false, .apiError(_error))
+                                                
                                                 self.log(self.getLog("Authorization failed with error: \(_error) - \(_error.localizedDescription)"), type: .error)
                                             } else {
                                                 callback?(true, nil)
@@ -138,8 +147,22 @@ final public class HSHealthStore: Loggable {
                                             }
         }
     
-
+    }
+    
+    
+    /// Returns the Workout building context for the given workout
+    /// - Parameter workout: Wrkout
+    /// - Returns: A tuple representing the current `HKHealthStore` and the associated `HKWorkoutBuilder`
+    public func workoutContext() -> (store: HKHealthStore, builder: HKWorkoutBuilder) {
+        let store = healthStore
+        let workoutConfig = HKWorkoutConfiguration()
+        workoutConfig.activityType = .pilates
         
+        let builder = HKWorkoutBuilder(healthStore: store,
+                                       configuration: workoutConfig,
+                                       device: .local())
+        
+        return (store, builder)
     }
 }
 

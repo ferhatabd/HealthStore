@@ -10,11 +10,6 @@ import Foundation
 /// Defines a standard Workout skeleton
 public protocol Workout {
     
-    /// Each workout might have different types regarding
-    /// the actual data they have
-    ///
-    associatedtype UnitType
-    
     /// start date
     var start: Date { get set }
     
@@ -24,8 +19,6 @@ public protocol Workout {
     /// Duration of the workout
     var duration: TimeInterval { get }
     
-    /// Actual workout gem
-    var data: UnitType { get set }
 }
 
 
