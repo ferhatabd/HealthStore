@@ -237,5 +237,28 @@ final public class HSHealthStore: Loggable {
     public func userResponded(toObject object: HKObjectType) -> Bool {
         healthStore.authorizationStatus(for: object) != .notDetermined
     }
+    
+    
+    /// Trigger a workout start on the watch companion app
+    ///
+    ///   If the `callback` is called with its `success` input true, it means that the watch app
+    ///   has started successfully and handling the workout.
+    ///   If not it means that there is no tracking done on the watch, so it's suggessted to implement
+    ///   a fallback mechanism to swithc back to local tracking
+    ///
+    /// - Parameters:
+    ///   - config: Workout configuration to send to watch app
+    ///   - completion: Callback for results
+    ///
+    @available(watchOS, unavailable)
+    public func wakeWatch(withWorkout config: HKWorkoutConfiguration, _ completion: @escaping ((_ success: Bool, _ error: Error?)->())) {
+        healthStore.startWatchApp(with: config) { (success, error) in
+            if success {
+                completion(true, nil)
+            } else {
+                completion(false, error)
+            }
+        }
+    }
 }
 
