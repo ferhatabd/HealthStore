@@ -243,8 +243,8 @@ final public class HSHealthStore: Loggable {
     ///
     ///   If the `callback` is called with its `success` input true, it means that the watch app
     ///   has started successfully and handling the workout.
-    ///   If not it means that there is no tracking done on the watch, so it's suggessted to implement
-    ///   a fallback mechanism to swithc back to local tracking
+    ///   If not it means that there is no tracking done on the watch, in which case it's suggessted to implement
+    ///   a fallback mechanism to switch back to local tracking
     ///
     /// - Parameters:
     ///   - config: Workout configuration to send to watch app
